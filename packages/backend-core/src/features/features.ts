@@ -39,18 +39,50 @@ export interface EnvFlagEntry {
 }
 
 export function parseEnvFlags(flags: string): EnvFlagEntry[] {
-  const split = flags.split(",").map(x => x.split(":"))
+  // Fast-path for empty input: mimic original split behaviour which yields no features
+  if (flags.length === 0) return []
+
+  const groups = flags.split(",")
   const result: EnvFlagEntry[] = []
-  for (const [tenantId, ...features] of split) {
-    for (let feature of features) {
+
+  for (let gi = 0, gl = groups.length; gi < gl; gi++) {
+    const g = groups[gi]
+    const gLen = g.length
+    if (gLen === 0) {
+      // original behavior: split(':') on '' => [''] -> tenantId='' and no features
+      continue
+    }
+
+    const firstColon = g.indexOf(":")
+    if (firstColon === -1) {
+      // no colon => tenantId only, no features to add
+      continue
+    }
+
+    const tenantId = g.substring(0, firstColon)
+
+    // Parse features after the first colon without creating intermediate arrays
+    let pos = firstColon + 1
+    while (pos <= gLen) {
+      let nextColon = g.indexOf(":", pos)
+      if (nextColon === -1) nextColon = gLen
+
+      // Determine boolean value and feature start index without extra allocations
       let value = true
-      if (feature.startsWith("!")) {
-        feature = feature.slice(1)
+      let featureStart = pos
+      if (featureStart < nextColon && g.charCodeAt(featureStart) === 33) { // '!' === 33
         value = false
+        featureStart++
       }
-      result.push({ tenantId, key: feature, value })
+
+      const key = g.substring(featureStart, nextColon)
+      result.push({ tenantId, key, value })
+
+      pos = nextColon + 1
+      if (pos > gLen) break
     }
   }
+
   return result
 }
 
