@@ -256,5 +256,6 @@ export function hasCircularStructure(json: any) {
 }
 
 export function urlHasProtocol(url: string): boolean {
-  return !!url.match(/^.+:\/\/.+$/)
+  const idx = url.indexOf("://")
+  return idx > 0 && idx < url.length - 3
 }
