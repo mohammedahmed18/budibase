@@ -28,12 +28,19 @@ type GetOpts = { cleanup?: boolean }
 
 function removeUserPassword(users: User | User[]) {
   if (Array.isArray(users)) {
-    return users.map(user => {
+    const len = users.length
+    const out = new Array(len)
+    for (let i = 0; i < len; i++) {
+      const user = users[i]
       if (user) {
+        // delete password in-place on the user object (preserve original behavior)
         delete user.password
-        return user
+        out[i] = user
+      } else {
+        out[i] = undefined
       }
-    })
+    }
+    return out
   } else if (users) {
     delete users.password
     return users
@@ -85,7 +92,7 @@ export async function bulkUpdateGlobalUsers(users: User[]) {
 }
 
 export async function getById(id: string, opts?: GetOpts): Promise<User> {
-  const db = context.getGlobalDB()
+  const db = getGlobalDB()
   let user = await db.get<User>(id)
   if (opts?.cleanup) {
     user = removeUserPassword(user) as User
