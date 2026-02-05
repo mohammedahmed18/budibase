@@ -36,6 +36,10 @@ const STATE = {
 }
 export const SIGNED_FILE_PREFIX = "/files/signed"
 
+const BUCKET_PATH_REGEX = new RegExp(
+  `^${SIGNED_FILE_PREFIX}/(?<bucket>[^/]+)/(?<path>.+)$`
+)
+
 type ListParams = {
   ContinuationToken?: string
 }
@@ -812,12 +816,10 @@ the bucket and the path from it
 export function extractBucketAndPath(
   url: string
 ): { bucket: string; path: string } | null {
-  const baseUrl = url.split("?")[0]
+  const q = url.indexOf("?")
+  const baseUrl = q === -1 ? url : url.slice(0, q)
 
-  const regex = new RegExp(
-    `^${SIGNED_FILE_PREFIX}/(?<bucket>[^/]+)/(?<path>.+)$`
-  )
-  const match = baseUrl.match(regex)
+  const match = BUCKET_PATH_REGEX.exec(baseUrl)
 
   if (match && match.groups) {
     const { bucket, path } = match.groups
