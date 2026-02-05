@@ -1,5 +1,9 @@
 import { Agent, ProxyAgent, Dispatcher } from "undici"
 
+const bypassCache = new WeakMap<object, boolean>()
+
+const agentCache = new Map<string, Dispatcher>()
+
 /**
  * Check if a URL matches any pattern in the NO_PROXY list.
  * Supports patterns like: *.foo.com, baz.com, .example.com
@@ -163,12 +167,24 @@ function createDispatcher(options?: {
   url?: string
 }): Dispatcher {
   const rejectUnauthorized = options?.rejectUnauthorized ?? true
-
-  if (shouldBypassProxy(options?.url)) {
-    return createDirectAgent(rejectUnauthorized)
+  
+  // Fast path: check cache for this configuration
+  const cacheKey = `${rejectUnauthorized ? 'secure' : 'insecure'}-${options?.url || 'no-url'}`
+  const cached = agentCache.get(cacheKey)
+  if (cached) {
+    return cached
   }
 
-  return createProxyAgent(rejectUnauthorized)
+  let dispatcher: Dispatcher
+  if (shouldBypassProxy(options?.url)) {
+    dispatcher = createDirectAgent(rejectUnauthorized)
+  } else {
+    dispatcher = createProxyAgent(rejectUnauthorized)
+  }
+  
+  // Cache for subsequent calls with same configuration
+  agentCache.set(cacheKey, dispatcher)
+  return dispatcher
 }
 
 /**
