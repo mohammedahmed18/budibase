@@ -1,13 +1,15 @@
 import { Workspace } from "@budibase/types"
 import { WORKSPACE_DEV_PREFIX, WORKSPACE_PREFIX } from "../constants"
 
+const DEV_PREFIX = WORKSPACE_DEV_PREFIX
+
 const NO_WORKSPACE_ERROR = "No app provided"
 
 export function isDevWorkspaceID(workspaceId?: string) {
   if (!workspaceId) {
     throw NO_WORKSPACE_ERROR
   }
-  return workspaceId.startsWith(WORKSPACE_DEV_PREFIX)
+  return workspaceId.indexOf(DEV_PREFIX) === 0
 }
 
 export function isProdWorkspaceID(workspaceId?: string) {
@@ -23,7 +25,11 @@ export function isDevWorkspace(workspace: Workspace) {
   if (!workspace) {
     throw NO_WORKSPACE_ERROR
   }
-  return isDevWorkspaceID(workspace.appId)
+  const workspaceId = workspace.appId
+  if (!workspaceId) {
+    throw NO_WORKSPACE_ERROR
+  }
+  return workspaceId.indexOf(DEV_PREFIX) === 0
 }
 
 /**
