@@ -6,6 +6,12 @@ import {
 } from "../constants"
 import { newid } from "./newid"
 
+const ROLE_PREFIX = DocumentType.ROLE + SEPARATOR
+
+const PREFIX: string = `${DocumentType.ROW}${SEPARATOR}${InternalTable.USER_METADATA}${SEPARATOR}`
+
+const PREFIX_LEN: number = PREFIX.length
+
 /**
  * Generates a new workspace ID.
  * @returns The new workspace ID which the workspace doc can be stored under.
@@ -63,11 +69,22 @@ export function generateUserMetadataID(globalId: string) {
  * Breaks up the ID to get the global ID.
  */
 export function getGlobalIDFromUserMetadataID(id: string) {
-  const prefix = `${DocumentType.ROW}${SEPARATOR}${InternalTable.USER_METADATA}${SEPARATOR}`
-  if (!id || !id.includes(prefix)) {
+  if (!id) {
     return id
   }
-  return id.split(prefix)[1]
+  const first = id.indexOf(PREFIX)
+  if (first === -1) {
+    return id
+  }
+  const start = first + PREFIX_LEN
+  const second = id.indexOf(PREFIX, start)
+  /* Match behavior of id.split(PREFIX)[1]: if a second occurrence exists,
+     return the substring between the first and second; otherwise return
+     everything after the first occurrence. */
+  if (second === -1) {
+    return id.slice(start)
+  }
+  return id.slice(start, second)
 }
 
 /**
@@ -87,18 +104,19 @@ export function generateAppUserID(prodWorkspaceId: string, userId: string) {
  * @returns The new role ID which the role doc can be stored under.
  */
 export function generateRoleID(name: string) {
-  const prefix = `${DocumentType.ROLE}${SEPARATOR}`
+  const prefix = ROLE_PREFIX
   if (name.startsWith(prefix)) {
     return name
   }
-  return `${prefix}${name}`
+  return prefix + name
 }
 
 /**
  * Utility function to be more verbose.
  */
 export function prefixRoleID(name: string) {
-  return generateRoleID(name)
+  // Fast-path: if already prefixed, return as-is
+  return name.startsWith(ROLE_PREFIX) ? name : ROLE_PREFIX + name
 }
 
 /**
