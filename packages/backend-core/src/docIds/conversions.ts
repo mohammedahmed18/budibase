@@ -49,8 +49,5 @@ export function getProdWorkspaceID(workspaceId: string) {
     return workspaceId
   }
   // split to take off the app_dev element, then join it together incase any other app_ exist
-  const split = workspaceId.split(WORKSPACE_DEV_PREFIX)
-  split.shift()
-  const rest = split.join(WORKSPACE_DEV_PREFIX)
-  return `${WORKSPACE_PREFIX}${rest}`
+  return WORKSPACE_PREFIX + workspaceId.slice(WORKSPACE_DEV_PREFIX.length)
 }
