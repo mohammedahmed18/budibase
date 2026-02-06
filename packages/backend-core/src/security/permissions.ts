@@ -118,8 +118,10 @@ export const BUILTIN_PERMISSIONS: BuiltinPermissions = {
   },
 }
 
+const CLONED_BUILTIN_PERMISSIONS = cloneDeep(BUILTIN_PERMISSIONS)
+
 export function getBuiltinPermissions(): BuiltinPermissions {
-  return cloneDeep(BUILTIN_PERMISSIONS)
+  return cloneDeep(CLONED_BUILTIN_PERMISSIONS)
 }
 
 export function getBuiltinPermissionByID(id: string) {
