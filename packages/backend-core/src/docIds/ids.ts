@@ -6,6 +6,12 @@ import {
 } from "../constants"
 import { newid } from "./newid"
 
+const USER_METADATA_PREFIX = `${DocumentType.ROW}${SEPARATOR}${InternalTable.USER_METADATA}${SEPARATOR}`
+
+const PREFIX: string = `${DocumentType.ROW}${SEPARATOR}${InternalTable.USER_METADATA}${SEPARATOR}`
+
+const PREFIX_LEN: number = PREFIX.length
+
 /**
  * Generates a new workspace ID.
  * @returns The new workspace ID which the workspace doc can be stored under.
@@ -56,18 +62,29 @@ export function isGlobalUserID(id: string) {
  * @returns The new user ID which the user doc can be stored under.
  */
 export function generateUserMetadataID(globalId: string) {
-  return generateRowID(InternalTable.USER_METADATA, globalId)
+  return `${USER_METADATA_PREFIX}${globalId || newid()}`
 }
 
 /**
  * Breaks up the ID to get the global ID.
  */
 export function getGlobalIDFromUserMetadataID(id: string) {
-  const prefix = `${DocumentType.ROW}${SEPARATOR}${InternalTable.USER_METADATA}${SEPARATOR}`
-  if (!id || !id.includes(prefix)) {
+  if (!id) {
     return id
   }
-  return id.split(prefix)[1]
+  const first = id.indexOf(PREFIX)
+  if (first === -1) {
+    return id
+  }
+  const start = first + PREFIX_LEN
+  const second = id.indexOf(PREFIX, start)
+  /* Match behavior of id.split(PREFIX)[1]: if a second occurrence exists,
+     return the substring between the first and second; otherwise return
+     everything after the first occurrence. */
+  if (second === -1) {
+    return id.slice(start)
+  }
+  return id.slice(start, second)
 }
 
 /**
