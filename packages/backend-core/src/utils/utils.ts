@@ -13,6 +13,8 @@ import { getAllWorkspaces } from "../db"
 import env from "../environment"
 import * as tenancy from "../tenancy"
 
+const BUILDER_PREVIEW_RE = /^\/app\/app_\w+\/preview$/
+
 const WORKSPACE_PREFIX = DocumentType.WORKSPACE + SEPARATOR
 const PROD_APP_PREFIX = "/app/"
 
@@ -59,7 +61,7 @@ export function isServingBuilderPreview(ctx: Ctx): boolean {
 }
 
 function isBuilderPreviewUrl(path: string): boolean {
-  return new RegExp(/^\/app\/app_\w+\/preview$/).test(path)
+  return BUILDER_PREVIEW_RE.test(path)
 }
 
 export function isPublicApiRequest(ctx: Ctx): boolean {
