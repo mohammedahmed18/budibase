@@ -18,6 +18,12 @@ import env from "../environment"
 import Context from "./Context"
 import { ContextMap } from "./types"
 
+const _GLOBAL_NAME = StaticDatabases.GLOBAL.name
+
+const _SEPARATOR = SEPARATOR
+
+const _DEFAULT_TENANT_ID = DEFAULT_TENANT_ID
+
 let TEST_WORKSPACE_ID: string | null = null
 
 export function getGlobalDBName(tenantId?: string) {
@@ -52,11 +58,9 @@ export function getScimDBName(tenantId?: string) {
 }
 
 export function baseGlobalDBName(tenantId: string | undefined | null) {
-  if (!tenantId || tenantId === DEFAULT_TENANT_ID) {
-    return StaticDatabases.GLOBAL.name
-  } else {
-    return `${tenantId}${SEPARATOR}${StaticDatabases.GLOBAL.name}`
-  }
+  return !tenantId || tenantId === _DEFAULT_TENANT_ID
+    ? _GLOBAL_NAME
+    : `${tenantId}${_SEPARATOR}${_GLOBAL_NAME}`
 }
 
 export function getPlatformURL() {
