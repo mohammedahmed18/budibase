@@ -8,6 +8,13 @@ import {
 import flatten from "lodash/flatten"
 import cloneDeep from "lodash/fp/cloneDeep"
 
+const PERMISSION_LEVEL_MAP: Record<PermissionLevel, number> = {
+  [PermissionLevel.EXECUTE]: 0,
+  [PermissionLevel.READ]: 1,
+  [PermissionLevel.WRITE]: 2,
+  [PermissionLevel.ADMIN]: 3,
+}
+
 export { PermissionLevel, PermissionType } from "@budibase/types"
 
 export type RoleHierarchy = {
@@ -25,19 +32,8 @@ export class PermissionImpl implements Permission {
 }
 
 export function levelToNumber(perm: PermissionLevel) {
-  switch (perm) {
-    // not everything has execute privileges
-    case PermissionLevel.EXECUTE:
-      return 0
-    case PermissionLevel.READ:
-      return 1
-    case PermissionLevel.WRITE:
-      return 2
-    case PermissionLevel.ADMIN:
-      return 3
-    default:
-      return -1
-  }
+  const level = PERMISSION_LEVEL_MAP[perm]
+  return level !== undefined ? level : -1
 }
 
 /**
@@ -153,7 +149,8 @@ export function doesHaveBasePermission(
 }
 
 export function isPermissionLevelHigherThanRead(level: PermissionLevel) {
-  return levelToNumber(level) > 1
+  const levelNum = PERMISSION_LEVEL_MAP[level]
+  return levelNum !== undefined ? levelNum > 1 : false
 }
 
 // utility as a lot of things need simply the builder permission
