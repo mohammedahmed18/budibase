@@ -379,11 +379,8 @@ export async function ensureSnippetContext() {
 
 export function getEnvironmentVariables() {
   const context = Context.get()
-  if (!context.environmentVariables) {
-    return null
-  } else {
-    return context.environmentVariables
-  }
+  const env = context.environmentVariables
+  return env ? env : null
 }
 
 export function getGlobalDB(): Database {
