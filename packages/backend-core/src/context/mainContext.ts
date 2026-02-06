@@ -496,7 +496,8 @@ export function getTableForView(viewId: string): Table | undefined {
   if (!context) {
     return
   }
-  return context.viewToTableCache?.[viewId]
+  const cache = context.viewToTableCache
+  return cache ? cache[viewId] : undefined
 }
 
 export function setTableForView(viewId: string, table: Table) {
