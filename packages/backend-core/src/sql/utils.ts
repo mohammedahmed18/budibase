@@ -11,6 +11,8 @@ import { DEFAULT_BB_DATASOURCE_ID } from "../constants"
 import { Knex } from "knex"
 import environment from "../environment"
 
+const PREFIX = DocumentType.DATASOURCE + SEPARATOR
+
 const DOUBLE_SEPARATOR = `${SEPARATOR}${SEPARATOR}`
 const ROW_ID_REGEX = /^\[.*]$/g
 const ENCODED_SPACE = encodeURIComponent(" ")
@@ -22,7 +24,7 @@ const DATE_REGEX = /(\d{4}-\d{2}-\d{2})/
 const TIME_REGEX = /^(?:\d{2}:)?(?:\d{2}:)(?:\d{2})$/
 
 export function isExternalTableID(tableId: string) {
-  return tableId.startsWith(DocumentType.DATASOURCE + SEPARATOR)
+  return tableId.startsWith(PREFIX)
 }
 
 export function isInternalTableID(tableId: string) {
