@@ -1,6 +1,8 @@
 import { FieldType, Table } from "@budibase/types"
 import { PROTECTED_INTERNAL_COLUMNS } from "./constants"
 
+const PROTECTED_INTERNAL_COLUMNS_SET = new Set(PROTECTED_INTERNAL_COLUMNS as any)
+
 const allowDisplayColumnByType: Record<FieldType, boolean> = {
   [FieldType.STRING]: true,
   [FieldType.LONGFORM]: true,
@@ -86,7 +88,7 @@ export function canHaveDefaultColumn(type: FieldType): boolean {
 }
 
 export function isAllowedDisplayField(name: string, type: FieldType) {
-  if (PROTECTED_INTERNAL_COLUMNS.includes(name as any)) return false
+  if (PROTECTED_INTERNAL_COLUMNS_SET.has(name as any)) return false
   return canBeDisplayColumn(type)
 }
 
