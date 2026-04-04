@@ -85,13 +85,14 @@ export function filterValueToLabel() {
 }
 
 export function hasSchema(test: any) {
-  return (
-    typeof test === "object" &&
-    !Array.isArray(test) &&
-    test !== null &&
-    !(test instanceof Date) &&
-    Object.keys(test).length > 0
-  )
+  if (typeof test !== "object" || Array.isArray(test) || test === null || test instanceof Date) return false
+
+  for (const k in test) {
+    if (Object.prototype.hasOwnProperty.call(test, k)) {
+      return true
+    }
+  }
+  return false
 }
 
 export function trimOtherProps(object: any, allowedProps: string[]) {
