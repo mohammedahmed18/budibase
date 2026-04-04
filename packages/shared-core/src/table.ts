@@ -93,22 +93,24 @@ export function isAllowedDisplayField(name: string, type: FieldType) {
 export function findDuplicateInternalColumns(table: Table): string[] {
   // maintains the case of keys
   const casedKeys = Object.keys(table.schema)
-  // get the column names
-  const uncasedKeys = casedKeys.map(colName => colName.toLowerCase())
-  // there are duplicates
-  const set = new Set(uncasedKeys)
-  let duplicates: string[] = []
-  if (set.size !== uncasedKeys.length) {
-    for (let key of set.keys()) {
-      const count = uncasedKeys.filter(name => name === key).length
-      if (count > 1) {
-        duplicates.push(key)
-      }
-    }
+  // Count occurrences of lower-cased keys in one pass
+  const counts = new Map<string, number>()
+  for (let i = 0, len = casedKeys.length; i < len; i++) {
+    const lower = casedKeys[i].toLowerCase()
+    counts.set(lower, (counts.get(lower) || 0) + 1)
   }
 
-  for (let internalColumn of PROTECTED_INTERNAL_COLUMNS) {
-    if (casedKeys.find(key => key === internalColumn)) {
+  const duplicates: string[] = []
+  // collect keys that appear more than once (preserving insertion order of first appearance)
+  for (const [key, count] of counts) {
+    if (count > 1) duplicates.push(key)
+  }
+
+  // fast lookup for exact-case internal column matches
+  const casedSet = new Set(casedKeys)
+  for (let i = 0, len = PROTECTED_INTERNAL_COLUMNS.length; i < len; i++) {
+    const internalColumn = PROTECTED_INTERNAL_COLUMNS[i]
+    if (casedSet.has(internalColumn)) {
       duplicates.push(internalColumn)
     }
   }
