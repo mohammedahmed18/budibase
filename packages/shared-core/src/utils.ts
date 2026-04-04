@@ -73,15 +73,15 @@ export async function parallelForeach<T>(
 }
 
 export function filterValueToLabel() {
-  return Object.keys(Constants.OperatorOptions).reduce(
-    (acc: { [key: string]: string }, key: string) => {
-      const ops: { [key: string]: any } = Constants.OperatorOptions
-      const op: { [key: string]: string } = ops[key]
-      acc[op["value"]] = op.label
-      return acc
-    },
-    {}
-  )
+  const ops = Constants.OperatorOptions
+  const keys = Object.keys(ops)
+  const acc: { [key: string]: string } = {}
+  for (let i = 0, len = keys.length; i < len; i++) {
+    const key = keys[i]
+    const op: { [key: string]: string } = ops[key]
+    acc[op["value"]] = op.label
+  }
+  return acc
 }
 
 export function hasSchema(test: any) {
