@@ -74,7 +74,7 @@ const allowDefaultColumnByType: Record<FieldType, boolean> = {
 }
 
 export function canBeDisplayColumn(type: FieldType): boolean {
-  return !!allowDisplayColumnByType[type]
+  return Boolean(allowDisplayColumnByType[type])
 }
 
 export function canBeSortColumn(type: FieldType): boolean {
