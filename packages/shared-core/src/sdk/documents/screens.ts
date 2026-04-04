@@ -3,7 +3,10 @@ import { Screen, Component } from "@budibase/types"
 export function findInSettings(screen: Screen, toFind: string) {
   const foundIn: { setting: string; value: string }[] = []
   function recurse(props: Component, parentKey = "") {
-    for (const [key, value] of Object.entries(props)) {
+    const keys = Object.keys(props as Record<string, unknown>)
+    for (let i = 0, len = keys.length; i < len; i++) {
+      const key = keys[i]
+      const value = (props as Record<string, unknown>)[key]
       if (!value) {
         continue
       }
@@ -13,7 +16,7 @@ export function findInSettings(screen: Screen, toFind: string) {
           value: value,
         })
       } else if (typeof value === "object") {
-        recurse(value, key)
+        recurse(value as Component, key)
       }
     }
   }
