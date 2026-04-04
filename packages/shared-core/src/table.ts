@@ -73,6 +73,8 @@ const allowDefaultColumnByType: Record<FieldType, boolean> = {
   [FieldType.BB_REFERENCE_SINGLE]: true,
 }
 
+const _allowDefaultColumnByType = allowDefaultColumnByType
+
 export function canBeDisplayColumn(type: FieldType): boolean {
   return !!allowDisplayColumnByType[type]
 }
@@ -82,7 +84,7 @@ export function canBeSortColumn(type: FieldType): boolean {
 }
 
 export function canHaveDefaultColumn(type: FieldType): boolean {
-  return !!allowDefaultColumnByType[type]
+  return Boolean(_allowDefaultColumnByType[type])
 }
 
 export function isAllowedDisplayField(name: string, type: FieldType) {
