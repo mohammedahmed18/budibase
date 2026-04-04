@@ -13,6 +13,13 @@ import * as Constants from "./constants"
 import { removeKeyNumbering, splitFiltersArray } from "./filters"
 import pick from "lodash/pick"
 
+const allowed: Map<string, string> = new Map([
+  [BasicOperator.STRING as unknown as string, "email"],
+  [BasicOperator.FUZZY as unknown as string, "email"],
+  [BasicOperator.EQUAL as unknown as string, "_id"],
+  [ArrayOperator.ONE_OF as unknown as string, "_id"],
+])
+
 const FILTER_ALLOWED_KEYS: (keyof SearchFilter)[] = [
   "field",
   "operator",
@@ -107,37 +114,47 @@ export function trimOtherProps(object: any, allowedProps: string[]) {
 export function isSupportedUserSearch(
   query: SearchFilters
 ): query is SearchFilters {
-  const allowed = [
-    { op: BasicOperator.STRING, key: "email" },
-    { op: BasicOperator.FUZZY, key: "email" },
-    { op: BasicOperator.EQUAL, key: "_id" },
-    { op: ArrayOperator.ONE_OF, key: "_id" },
-  ]
-  const { allOr, onEmptyFilter, ...filters } = query
-  for (const [key, operation] of Object.entries(filters)) {
+  // Iterate over own properties directly to avoid creating a shallow copy via destructuring
+  for (const key in query) {
+    if (!Object.prototype.hasOwnProperty.call(query, key)) {
+      continue
+    }
+    if (key === "allOr" || key === "onEmptyFilter") {
+      continue
+    }
+
+    const operation = (query as any)[key]
+
     if (typeof operation !== "object") {
       return false
     }
 
     if (isLogicalSearchOperator(key)) {
-      for (const condition of query[key]!.conditions) {
-        if (!isSupportedUserSearch(condition)) {
+      const conditions = (operation as any).conditions
+      for (let i = 0, len = conditions.length; i < len; i++) {
+        if (!isSupportedUserSearch(conditions[i])) {
           return false
         }
       }
       return true
     }
 
-    const fields = Object.keys(operation || {})
+    // Determine whether the operation object has zero, one, or more than one own property
+    let firstField: string | null = null
+    let fieldCount = 0
+    const op = operation || {}
+    for (const f in op) {
+      if (!Object.prototype.hasOwnProperty.call(op, f)) continue
+      firstField = f
+      if (++fieldCount > 1) break
+    }
     // this filter doesn't contain options - ignore
-    if (fields.length === 0) {
+    if (fieldCount === 0) {
       continue
     }
-    const allowedOperation = allowed.find(
-      allow =>
-        allow.op === key && fields.length === 1 && fields[0] === allow.key
-    )
-    if (!allowedOperation) {
+
+    const expected = allowed.get(key)
+    if (!expected || fieldCount !== 1 || firstField !== expected) {
       return false
     }
   }
