@@ -16,7 +16,10 @@ import { isTest } from "../environment"
 // This setter is used in the entrypoint (either index.js or index.mjs).
 let runJS: ((js: string, context: Record<string, any>) => any) | undefined =
   undefined
-export const setJSRunner = (runner: typeof runJS) => (runJS = runner)
+export const setJSRunner = (runner: typeof runJS) => {
+                                                         runJS = runner
+                                                         return runJS
+                                                       }
 
 export const removeJSRunner = () => {
   runJS = undefined
