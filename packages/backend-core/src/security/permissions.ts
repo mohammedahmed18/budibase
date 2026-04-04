@@ -8,6 +8,8 @@ import {
 import flatten from "lodash/flatten"
 import cloneDeep from "lodash/fp/cloneDeep"
 
+let _cachedDeepBuiltinPermissions: BuiltinPermissions | null = null
+
 export { PermissionLevel, PermissionType } from "@budibase/types"
 
 export type RoleHierarchy = {
@@ -119,7 +121,44 @@ export const BUILTIN_PERMISSIONS: BuiltinPermissions = {
 }
 
 export function getBuiltinPermissions(): BuiltinPermissions {
-  return cloneDeep(BUILTIN_PERMISSIONS)
+  // Create and cache one deep clone of the builtins (expensive) and then
+  // return a fast structured shallow clone on each call to avoid repeated deep cloning.
+  if (_cachedDeepBuiltinPermissions === null) {
+    _cachedDeepBuiltinPermissions = cloneDeep(BUILTIN_PERMISSIONS)
+  }
+
+  const src = _cachedDeepBuiltinPermissions
+  const result: BuiltinPermissions = {} as BuiltinPermissions
+
+  // Copy each builtin entry. We recreate the object and the permissions array
+  // with shallow-copied permission entries to avoid shared references.
+  const keys = Object.keys(src) as Array<keyof BuiltinPermissions>
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i]
+    const entry = (src as any)[key]
+    const perms = entry.permissions || []
+    const permsLen = perms.length
+    const newPerms: any[] = new Array(permsLen)
+    for (let j = 0; j < permsLen; j++) {
+      const p = perms[j]
+      // Shallow copy own enumerable properties of the permission object.
+      const clonedPerm: any = {}
+      for (const prop in p) {
+        if (Object.prototype.hasOwnProperty.call(p, prop)) {
+          clonedPerm[prop] = (p as any)[prop]
+        }
+      }
+      newPerms[j] = clonedPerm
+    }
+
+    ;(result as any)[key] = {
+      _id: entry._id,
+      name: entry.name,
+      permissions: newPerms,
+    }
+  }
+
+  return result
 }
 
 export function getBuiltinPermissionByID(id: string) {
