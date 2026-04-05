@@ -162,7 +162,7 @@ export async function processString(
   opts?: ProcessOptions
 ): Promise<string> {
   // TODO: carry out any async calls before carrying out async call
-  return processStringSync(string, context, opts)
+  return Promise.resolve(processStringSync(string, context, opts))
 }
 
 /**
