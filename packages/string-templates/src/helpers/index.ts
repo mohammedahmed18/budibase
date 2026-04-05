@@ -8,6 +8,10 @@ import {
   LITERAL_MARKER,
 } from "./constants"
 
+const cachedHelperFunctionBuiltin = HelperFunctionBuiltin
+
+const cachedHelperFunctionNames = Object.values(HelperFunctionNames)
+
 export { getJsHelperList } from "./list"
 
 const HTML_SWAPS = {
@@ -92,10 +96,51 @@ export const HELPERS = [
 ]
 
 export function HelperNames() {
-  return Object.values(HelperFunctionNames).concat(
-    HelperFunctionBuiltin,
-    externalHandlebars.externalHelperNames
-  )
+  // Read external helpers each call to preserve dynamic updates to that source
+  const external = externalHandlebars.externalHelperNames
+
+  // Compute resulting length respecting concat semantics:
+  // - if an item is an array, its elements are appended
+  // - otherwise the item itself is appended as a single element
+  let totalLen = cachedHelperFunctionNames.length
+  if (Array.isArray(cachedHelperFunctionBuiltin)) {
+    totalLen += cachedHelperFunctionBuiltin.length
+  } else {
+    totalLen += 1
+  }
+  if (Array.isArray(external)) {
+    totalLen += external.length
+  } else {
+    totalLen += 1
+  }
+
+  const result = new Array(totalLen)
+  let i = 0
+
+  // Copy cached helper function names
+  for (let j = 0, jl = cachedHelperFunctionNames.length; j < jl; j++, i++) {
+    result[i] = cachedHelperFunctionNames[j]
+  }
+
+  // Copy builtin (array or single)
+  if (Array.isArray(cachedHelperFunctionBuiltin)) {
+    for (let j = 0, jl = cachedHelperFunctionBuiltin.length; j < jl; j++, i++) {
+      result[i] = cachedHelperFunctionBuiltin[j]
+    }
+  } else {
+    result[i++] = cachedHelperFunctionBuiltin as any
+  }
+
+  // Copy external helpers (array or single)
+  if (Array.isArray(external)) {
+    for (let j = 0, jl = external.length; j < jl; j++, i++) {
+      result[i] = external[j]
+    }
+  } else {
+    result[i++] = external as any
+  }
+
+  return result
 }
 
 export function registerMinimum(handlebars: typeof Handlebars) {
