@@ -5,6 +5,15 @@ import {
   FieldType,
 } from "@budibase/types"
 
+const BYTE_HEX: string[] = (() => {
+  const table: string[] = new Array(256)
+  for (let i = 0; i < 256; i++) {
+    const s = i.toString(16)
+    table[i] = s.length === 1 ? "0" + s : s
+  }
+  return table
+})()
+
 export function isDeprecatedSingleUserColumn(
   schema: Pick<FieldSchema, "type" | "subtype" | "constraints">
 ): schema is {
@@ -30,14 +39,26 @@ export function isRequired(constraints: FieldConstraints | undefined) {
 // SQS does not support non-ASCII characters in column names, so we need to
 // replace them with unicode escape sequences.
 export function encodeNonAscii(str: string): string {
-  return str
-    .split("")
-    .map(char => {
-      return char.charCodeAt(0) > 127
-        ? "\\u" + char.charCodeAt(0).toString(16).padStart(4, "0")
-        : char
-    })
-    .join("")
+  // Fast-path for empty strings
+  if (str.length === 0) return str
+
+  const len = str.length
+  const out: string[] = new Array(len)
+  let outLen = 0
+
+  for (let i = 0; i < len; i++) {
+    const code = str.charCodeAt(i)
+    if (code > 127) {
+      const hi = (code >> 8) & 0xff
+      const lo = code & 0xff
+      out[outLen++] = "\\u" + BYTE_HEX[hi] + BYTE_HEX[lo]
+    } else {
+      out[outLen++] = str.charAt(i)
+    }
+  }
+
+  // If no non-ascii chars were encountered, joining still returns the same string
+  return out.join("")
 }
 
 export function decodeNonAscii(str: string): string {
