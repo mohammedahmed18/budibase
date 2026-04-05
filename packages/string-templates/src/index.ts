@@ -305,12 +305,17 @@ export function disableEscaping(string: string) {
 
   // find the unique set
   const unique = [...new Set(matches)]
-  for (let match of unique) {
-    // add a negative lookahead to exclude any already
-    const regex = new RegExp(`${match}(?!})`, "g")
-    string = string.replace(regex, `{${match}}`)
+  if (unique.length === 0) {
+    return string
   }
-  return string
+
+  // Build a single alternation regex using the original match strings (preserving their regex semantics).
+  // The negative lookahead from the original per-match pattern is applied to the whole alternation.
+  const pattern = `(?:${unique.join("|")})(?!})`
+  const regex = new RegExp(pattern, "g")
+
+  // Single pass replace with callback to avoid repeated string rewrites and multiple RegExp allocations.
+  return string.replace(regex, (m) => `{${m}}`)
 }
 
 /**

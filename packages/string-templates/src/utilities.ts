@@ -34,9 +34,14 @@ export const findDoubleHbsInstances = (string: string): string[] => {
   const tripleMatches = copied.match(regex)
   // remove triple braces
   if (tripleMatches) {
-    tripleMatches.forEach((match: string) => {
-      copied = copied.replace(match, "")
-    })
+    // Remove the first occurrence for each match (preserves original behavior where replace(match, "") was used)
+    for (let i = 0, len = tripleMatches.length; i < len; i++) {
+      const match = tripleMatches[i] as string
+      const idx = copied.indexOf(match)
+      if (idx !== -1) {
+        copied = copied.slice(0, idx) + copied.slice(idx + match.length)
+      }
+    }
   }
   const doubleMatches = copied.match(doubleRegex)
   return doubleMatches ? doubleMatches : []
