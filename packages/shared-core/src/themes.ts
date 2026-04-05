@@ -1,13 +1,26 @@
 import { ThemeOptions, ThemeClassPrefix } from "./constants/themes"
 import { Theme } from "@budibase/types"
 
+const PREFIX_LEN = ThemeClassPrefix.length
+
+const THEME_MAP: Map<string, typeof ThemeOptions[0]> = (() => {
+  const m = new Map<string, typeof ThemeOptions[0]>()
+  for (let i = 0, len = ThemeOptions.length; i < len; i++) {
+    const opt = ThemeOptions[i]
+    m.set(opt.id, opt)
+  }
+  return m
+})()
+
+const THEME_IDS = new Set(THEME_MAP.keys())
+
 // Gets the CSS class names for the specified theme
 export const getThemeClassNames = (theme?: Theme): string => {
   theme = ensureValidTheme(theme)
   let classNames = `${ThemeClassPrefix}${theme}`
 
   // Prefix with base class if required
-  const base = ThemeOptions.find(x => x.id === theme)?.base
+  const base = THEME_MAP.get(theme as string)?.base
   if (base) {
     classNames = `${ThemeClassPrefix}${base} ${classNames}`
   }
