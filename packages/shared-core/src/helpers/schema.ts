@@ -41,9 +41,50 @@ export function encodeNonAscii(str: string): string {
 }
 
 export function decodeNonAscii(str: string): string {
-  return str.replace(/\\u([0-9a-fA-F]{4})/g, (match, p1) =>
-    String.fromCharCode(parseInt(p1, 16))
-  )
+  const len: number = str.length
+  let i: number = 0
+  let last: number = 0
+  let out: string[] | null = null
+
+  while (i < len) {
+    // look for backslash followed by 'u' and four hex digits: \uXXXX
+    if (str.charCodeAt(i) === 92 /* '\' */ && i + 5 < len && str.charCodeAt(i + 1) === 117 /* 'u' */) {
+      let val: number = 0
+      let ok: boolean = true
+      // parse 4 hex digits
+      for (let j = i + 2; j < i + 6; j++) {
+        const cc: number = str.charCodeAt(j)
+        let digit: number
+        if (cc >= 48 && cc <= 57) {
+          digit = cc - 48 // '0'-'9'
+        } else if (cc >= 65 && cc <= 70) {
+          digit = cc - 55 // 'A'-'F' -> 10-15
+        } else if (cc >= 97 && cc <= 102) {
+          digit = cc - 87 // 'a'-'f' -> 10-15
+        } else {
+          ok = false
+          break
+        }
+        val = (val << 4) | digit
+      }
+
+      if (ok) {
+        // lazy initialize output pieces only when a replacement is needed
+        if (out === null) out = []
+        if (last < i) out.push(str.slice(last, i))
+        out.push(String.fromCharCode(val))
+        i += 6
+        last = i
+        continue
+      }
+    }
+    i++
+  }
+
+  // if no replacements were made, return original string (fast path)
+  if (out === null) return str
+  if (last < len) out.push(str.slice(last))
+  return out.join("")
 }
 
 export function isNumeric(field: FieldSchema) {
