@@ -11,11 +11,17 @@ export function isDeprecatedSingleUserColumn(
   type: FieldType.BB_REFERENCE
   subtype: BBReferenceFieldSubType.USER
 } {
-  const result =
-    schema.type === FieldType.BB_REFERENCE &&
-    schema.subtype === BBReferenceFieldSubType.USER &&
-    schema.constraints?.type !== "array"
-  return result
+  // Cache fields to avoid multiple property accesses on the input object
+  const type = schema.type
+  const subtype = schema.subtype
+  const constraints = schema.constraints as FieldConstraints | undefined
+
+  // Preserve original logic: constraints?.type !== "array"
+  return (
+    type === FieldType.BB_REFERENCE &&
+    subtype === BBReferenceFieldSubType.USER &&
+    (constraints == null ? true : constraints.type !== "array")
+  )
 }
 
 export function isRequired(constraints: FieldConstraints | undefined) {
