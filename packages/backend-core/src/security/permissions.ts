@@ -119,7 +119,38 @@ export const BUILTIN_PERMISSIONS: BuiltinPermissions = {
 }
 
 export function getBuiltinPermissions(): BuiltinPermissions {
-  return cloneDeep(BUILTIN_PERMISSIONS)
+  // Use the platform's structuredClone when available for a fast, native deep copy.
+  // Fallback to a lightweight, shape-aware clone to avoid the overhead of a generic deep-cloner.
+  if (typeof (globalThis as any).structuredClone === "function") {
+    return (globalThis as any).structuredClone(BUILTIN_PERMISSIONS) as BuiltinPermissions
+  }
+
+  // Lightweight clone for the known BuiltinPermissions shape:
+  // { [key]: { _id, name, permissions: Permission[] } }
+  const src = BUILTIN_PERMISSIONS as unknown as Record<string, any>
+  const out = {} as BuiltinPermissions
+  const keys = Object.keys(src)
+  for (let i = 0, klen = keys.length; i < klen; i++) {
+    const key = keys[i]
+    const bp = src[key]
+    // Clone permissions array with shallow copies of permission objects (preserving value semantics)
+    const perms = bp && bp.permissions
+    const plen = perms ? perms.length : 0
+    const permsCopy: Permission[] = new Array(plen)
+    for (let j = 0; j < plen; j++) {
+      // Shallow copy each permission's own enumerable properties into a plain object.
+      // This matches the intent of returning an independent deep copy for callers.
+      permsCopy[j] = Object.assign({}, perms[j])
+    }
+
+    out[key as keyof BuiltinPermissions] = {
+      _id: bp._id,
+      name: bp.name,
+      permissions: permsCopy,
+    } as any
+  }
+
+  return out
 }
 
 export function getBuiltinPermissionByID(id: string) {
