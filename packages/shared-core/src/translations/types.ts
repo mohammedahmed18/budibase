@@ -32,19 +32,24 @@ export const createTranslationDefinitions = (
   category: TranslationCategory,
   definitions: ReadonlyArray<TranslationDefinitionInput>
 ): TranslationDefinition[] => {
-  return definitions.map(definition => {
+  const len = definitions.length
+  const result: TranslationDefinition[] = new Array(len)
+
+  for (let i = 0; i < len; i++) {
+    const definition = definitions[i]
+    const key = definition.key
     const fullKey =
       definition.fullKey ??
-      (definition.key.includes(".")
-        ? definition.key
-        : `${category}.${definition.key}`)
+      (key.indexOf(".") !== -1 ? key : category + "." + key)
 
-    return {
+    result[i] = {
       key: definition.key,
       name: definition.name,
       defaultValue: definition.defaultValue,
       category,
       fullKey,
     }
-  })
+  }
+
+  return result
 }
