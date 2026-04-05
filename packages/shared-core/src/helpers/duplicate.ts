@@ -92,22 +92,28 @@ export const getSequentialName = <T extends any>(
     return firstName
   }
   let max = 0
-  items.forEach(item => {
-    const name = getName?.(item) ?? item
+  const prefixLen = trimmedPrefix.length
+  const localGetName = getName
+  for (let i = 0, len = items.length; i < len; i++) {
+    const item = items[i]
+    const name = localGetName ? localGetName(item) : (item as any)
     if (typeof name !== "string" || !name.startsWith(trimmedPrefix)) {
-      return
+      continue
     }
-    const split = name.split(trimmedPrefix)
-    if (split.length !== 2) {
-      return
+    // Ensure the prefix occurs only once (original used split and required length === 2)
+    if (name.indexOf(trimmedPrefix, prefixLen) !== -1) {
+      continue
     }
-    if (split[1].trim() === "") {
-      split[1] = "1"
+    const suffix = name.slice(prefixLen)
+    let num: number
+    if (suffix.trim() === "") {
+      num = 1
+    } else {
+      num = parseInt(suffix)
     }
-    const num = parseInt(split[1])
     if (num > max) {
       max = num
     }
-  })
+  }
   return max === 0 ? firstName : `${prefix}${separator}${max + 1}`
 }
