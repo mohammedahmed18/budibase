@@ -1,6 +1,10 @@
 import { ThemeOptions, ThemeClassPrefix } from "./constants/themes"
 import { Theme } from "@budibase/types"
 
+const validThemeIds: Set<Theme> = new Set(
+  ThemeOptions.map((x) => x.id as Theme)
+)
+
 // Gets the CSS class names for the specified theme
 export const getThemeClassNames = (theme?: Theme): string => {
   theme = ensureValidTheme(theme)
@@ -26,12 +30,12 @@ export const ensureValidTheme = (
 
   // Ensure we aren't using the spectrum prefix
   if (theme.startsWith(ThemeClassPrefix)) {
-    theme = theme.split(ThemeClassPrefix)[1] as Theme
+    theme = theme.slice(ThemeClassPrefix.length) as Theme
   }
 
   // Check we aren't using a deprecated theme, and migrate
   // to the nearest valid theme if we are
-  if (!ThemeOptions.some(x => x.id === theme)) {
+  if (!validThemeIds.has(theme)) {
     if (theme === Theme.LIGHTEST) {
       return Theme.LIGHT
     } else if (theme === Theme.DARK) {
