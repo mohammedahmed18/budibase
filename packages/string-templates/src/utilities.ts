@@ -9,12 +9,13 @@ export const FIND_TRIPLE_HBS_REGEX = /{{{([^{].*?)}}}/g
 export const isBackendService = () => {
   // allow configuring backend JS mode when testing - we default to assuming
   // frontend, but need a method to control this
-  if (isTest() && isTestingBackendJS()) {
+  const test = isTest()
+  if (test && isTestingBackendJS()) {
     return true
   }
   // We consider the tests for string-templates to be frontend, so that they
   // test the frontend JS functionality.
-  if (isTest()) {
+  if (test) {
     return false
   }
   return typeof window === "undefined"
