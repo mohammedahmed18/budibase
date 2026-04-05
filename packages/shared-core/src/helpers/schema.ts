@@ -19,11 +19,14 @@ export function isDeprecatedSingleUserColumn(
 }
 
 export function isRequired(constraints: FieldConstraints | undefined) {
-  const isRequired =
+  // Cache presence to avoid repeated property access
+  const presence = constraints ? (constraints as any).presence : undefined
+
+  let isRequired =
     !!constraints &&
-    ((typeof constraints.presence !== "boolean" &&
-      constraints.presence?.allowEmpty === false) ||
-      constraints.presence === true)
+    ((typeof presence !== "boolean" && presence && presence.allowEmpty === false) ||
+      presence === true)
+
   return isRequired
 }
 
