@@ -20,6 +20,18 @@ import { Log, ProcessOptions } from "./types"
 import { UserScriptError } from "./errors"
 import { isTest } from "./environment"
 
+const _findAnyHbsFlags: string =
+  FIND_ANY_HBS_REGEX instanceof RegExp ? (FIND_ANY_HBS_REGEX.flags || "") : ""
+
+const _findAnyHbsNeedsFreshInstance: boolean = _findAnyHbsFlags.includes("g")
+
+const _findAnyHbsSource: string =
+  FIND_ANY_HBS_REGEX instanceof RegExp ? FIND_ANY_HBS_REGEX.source : String(FIND_ANY_HBS_REGEX)
+
+const _findAnyHbsCached: RegExp | null = _findAnyHbsNeedsFreshInstance
+  ? null
+  : new RegExp(_findAnyHbsSource, _findAnyHbsFlags)
+
 export type { Log, LogType } from "./types"
 export { setTestingBackendJS } from "./environment"
 export { helpersToRemoveForJs, getJsHelperList } from "./helpers/list"
@@ -319,7 +331,18 @@ export function disableEscaping(string: string) {
  * @returns {string} The wrapped property ready to be added to a templating string.
  */
 export function makePropSafe(property: any): string {
-  return `[${property}]`.replace("[[", "[").replace("]]", "]")
+  // Build wrapped string once, then perform up to two targeted single-occurrence replacements.
+  const wrapped = `[${property}]`
+  let result = wrapped
+  const openIdx = result.indexOf("[[")
+  if (openIdx !== -1) {
+    result = result.slice(0, openIdx) + "[" + result.slice(openIdx + 2)
+  }
+  const closeIdx = result.indexOf("]]")
+  if (closeIdx !== -1) {
+    result = result.slice(0, closeIdx) + "]" + result.slice(closeIdx + 2)
+  }
+  return result
 }
 
 /**
@@ -456,8 +479,11 @@ export function findHBSBlocks(string: string): string[] {
   if (!string || typeof string !== "string") {
     return []
   }
-  let regexp = new RegExp(FIND_ANY_HBS_REGEX)
-  let matches = string.match(regexp)
+
+  // Use cached RegExp when safe; otherwise build a fresh one to avoid
+  // shared state from global RegExp instances.
+  const regexp = _findAnyHbsCached ?? new RegExp(_findAnyHbsSource, _findAnyHbsFlags)
+  const matches = string.match(regexp)
   if (matches == null) {
     return []
   }
