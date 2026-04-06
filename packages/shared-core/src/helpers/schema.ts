@@ -5,6 +5,8 @@ import {
   FieldType,
 } from "@budibase/types"
 
+const NUMERIC_TYPES = new Set([FieldType.NUMBER, FieldType.BIGINT])
+
 export function isDeprecatedSingleUserColumn(
   schema: Pick<FieldSchema, "type" | "subtype" | "constraints">
 ): schema is {
@@ -47,5 +49,6 @@ export function decodeNonAscii(str: string): string {
 }
 
 export function isNumeric(field: FieldSchema) {
-  return field.type === FieldType.NUMBER || field.type === FieldType.BIGINT
+  const type = field.type
+  return NUMERIC_TYPES.has(type)
 }
