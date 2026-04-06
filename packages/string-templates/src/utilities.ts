@@ -1,5 +1,9 @@
 import { isTest, isTestingBackendJS } from "./environment"
 
+const btoaCache = new Map<string, string>()
+
+const BTOA_CACHE_SIZE = 1024
+
 const ALPHA_NUMERIC_REGEX = /^[A-Za-z0-9]+$/g
 
 export const FIND_HBS_REGEX = /{{([^{].*?)}}/g
@@ -72,7 +76,26 @@ export const removeHandlebarsStatements = (
 }
 
 export const btoa = (plainText: string) => {
-  return Buffer.from(plainText, "utf-8").toString("base64")
+  const cached = btoaCache.get(plainText)
+  if (cached !== undefined) {
+    // Move to the end to mark as recently used.
+    if (btoaCache.size > 1) {
+      btoaCache.delete(plainText)
+      btoaCache.set(plainText, cached)
+    }
+    return cached
+  }
+
+  const encoded = Buffer.from(plainText, "utf-8").toString("base64")
+  btoaCache.set(plainText, encoded)
+  if (btoaCache.size > BTOA_CACHE_SIZE) {
+    // Remove the oldest entry (first inserted key)
+    const firstKey = btoaCache.keys().next().value
+    if (firstKey !== undefined) {
+      btoaCache.delete(firstKey)
+    }
+  }
+  return encoded
 }
 
 export const atob = (base64: string) => {
