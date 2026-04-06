@@ -20,6 +20,10 @@ import { Log, ProcessOptions } from "./types"
 import { UserScriptError } from "./errors"
 import { isTest } from "./environment"
 
+const CAPTURE_JS_RE = /{{ js "(.*)" }}/
+
+const FIND_HBS_RE = new RegExp(FIND_HBS_REGEX)
+
 export type { Log, LogType } from "./types"
 export { setTestingBackendJS } from "./environment"
 export { helpersToRemoveForJs, getJsHelperList } from "./helpers/list"
@@ -319,7 +323,18 @@ export function disableEscaping(string: string) {
  * @returns {string} The wrapped property ready to be added to a templating string.
  */
 export function makePropSafe(property: any): string {
-  return `[${property}]`.replace("[[", "[").replace("]]", "]")
+  // Build wrapped string once, then perform up to two targeted single-occurrence replacements.
+  const wrapped = `[${property}]`
+  let result = wrapped
+  const openIdx = result.indexOf("[[")
+  if (openIdx !== -1) {
+    result = result.slice(0, openIdx) + "[" + result.slice(openIdx + 2)
+  }
+  const closeIdx = result.indexOf("]]")
+  if (closeIdx !== -1) {
+    result = result.slice(0, closeIdx) + "]" + result.slice(closeIdx + 2)
+  }
+  return result
 }
 
 /**
@@ -423,20 +438,24 @@ export function decodeJSBinding(handlebars: string): string | null {
  * @returns {boolean} Will return true if all strings found in HBS statement.
  */
 export function doesContainStrings(template: string, strings: any[]): boolean {
-  let regexp = new RegExp(FIND_HBS_REGEX)
+  let regexp = FIND_HBS_RE
   let matches = template.match(regexp)
   if (matches == null) {
     return false
   }
-  for (let match of matches) {
+  for (let i = 0, len = matches.length; i < len; i++) {
+    let match = matches[i]
     let hbs = match
-    if (isJSBinding(match)) {
-      hbs = decodeJSBinding(match)!
+    const decoded = decodeJSBinding(match)
+    if (decoded != null) {
+      hbs = decoded
     }
     let allFound = true
-    for (let string of strings) {
-      if (!hbs.includes(string)) {
+    for (let j = 0, sLen = strings.length; j < sLen; j++) {
+      // using indexOf avoids some overhead compared to includes in tight loops
+      if (hbs.indexOf(strings[j]) === -1) {
         allFound = false
+        break
       }
     }
     if (allFound) {
